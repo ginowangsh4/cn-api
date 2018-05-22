@@ -34,7 +34,7 @@ var chapter = {
 
 	// static affordance for participants
 	// find all participants for chapter
-	find_participants_for_chapter : function(context) {}
+	find_participants_for_chapter : function(setting) {}
 	// find participants for each character
 	find_participants_for_character : function(character.context.chapter_number) {}
 
@@ -50,10 +50,13 @@ var character = {
 	// list of objects owned by this character (at any time in narrative)
 	owned_objects  : []
 
+	// soon-to-be current chapter
+	chapter_number : 2 
+
 	// context for a character is different in different chapters
 	context : { 
 					chapter_number : { 
-											  detector : detector
+											  context : context
 										  }
 					// ... and more of this struct
 				 }
@@ -64,8 +67,8 @@ var character = {
 					chapter_number : { 
 												action_description  : "" 
 												change_next_chapter : function(chapter_number, next_chapter_number){} 
-												change_character    : function(character[]) {}
-												change_object       : function(object[]) {}
+												change_character    : function(character[], next_chapter_number) {}
+												change_object       : function(object[], next_chapter_number) {}
 											 }
 					// ... and more of this struct
 			 	 }
@@ -79,13 +82,15 @@ var object = {
 	name : ""
 	// list of owners, mutable 
 	owner_characters : []
+	// soon-to-be current chapter
+	chapter_number : 2 
 }
 
 var setting = {
 	context
 }
 
-let context = {
+var context = {
 	location
 	time
 	weather
@@ -93,13 +98,13 @@ let context = {
 	// ... other stuff
 }
 
-let transition = {
+var transition = {
 	end_chapter
 	end_chapter.character
 	begin_chapter.character 
 	object
 }
 
-let participant = {
+var participant = {
 	context
 }
