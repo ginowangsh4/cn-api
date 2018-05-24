@@ -25,7 +25,7 @@ var chapter = {
 	objects : []
 
 	// chapter number 
-	chaper_chapter : 2
+	chapter_number : 2
 	// next chapter as determined by character actions taken 
 	next_chapter : 2
 
