@@ -1,23 +1,23 @@
 let stage = {
-	// stage number 
+	// stage number
 	stage_number : 2
 	// chapters in this stage
-	chapters : [] 
+	chapters : []
 	// progression of the stages
 	prev_stage : 1
 	next_stage : 3
 	// progression rule of the chapters
-	chapter_map : { B : D; 
+	chapter_map : { B : D;
 						 B : E;
 						 C : E;
-						 // example ... other chapter relationships 
+						 // example ... other chapter relationships
 						}
 }
 
-var chapter = { 
-	// list of stage it belongs to 
+var chapter = {
+	// list of stage it belongs to
 	stages : []
-	// context of the chapter 
+	// context of the chapter
 	setting : setting
 	// list of characters it contains
 	characters : []
@@ -29,7 +29,7 @@ var chapter = {
 	// next chapter as determined by character actions taken 
 	next_chapter : 2
 
-	// optional 
+	// optional
 	transition : transition
 
 	// static affordance for participants
@@ -51,25 +51,25 @@ var character = {
 	owned_objects  : []
 
 	// soon-to-be current chapter
-	chapter_number : 2 
+	chapter_number : 2
 
 	// context for a character is different in different chapters
-	context : { 
-					chapter_number : { 
-											  context : context
-										  }
+	context : {
+					chapter_number : {
+						context : context
+					}
 					// ... and more of this struct
 				 }
-				 
+
 	// action for a character is different in different chapters
 	// an action can change next chapter, character representation and object representation
-	action :  { 
-					chapter_number : { 
-												action_description  : "" 
-												change_next_chapter : function(chapter_number, next_chapter_number){} 
-												change_character    : function(character[], next_chapter_number) {}
-												change_object       : function(object[], next_chapter_number) {}
-											 }
+	action :  {
+					chapter_number : {
+						action_description  : ""
+						change_next_chapter : function(chapter_number, next_chapter_number){}
+						change_character    : function(character[], next_chapter_number) {}
+						change_object       : function(object[], next_chapter_number) {}
+					}
 					// ... and more of this struct
 			 	 }
 
@@ -77,13 +77,13 @@ var character = {
 	current_participant : participant
 }
 
-var object = { 
+var object = {
 	// name of object, like a super potion
 	name : ""
-	// list of owners, mutable 
+	// list of owners, mutable
 	owner_characters : []
 	// soon-to-be current chapter
-	chapter_number : 2 
+	chapter_number : 2
 }
 
 var setting = {
@@ -101,7 +101,7 @@ var context = {
 var transition = {
 	end_chapter
 	end_chapter.character
-	begin_chapter.character 
+	begin_chapter.character
 	object
 }
 
