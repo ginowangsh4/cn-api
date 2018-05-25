@@ -22,29 +22,43 @@ function Chapter (title, setting, characters, objects) {
 	this.title = title;
 	this.setting = setting;
     this.characters = characters;
-	this.objects = objects;
+	this.objects = objects || [];
 	this.find_participants_for_character = find_participants_for_character;
 }
 
 function Character (name, owner_chapters, owned_objects, actions, contexts, first_chapter_appearance) {
 	this.name = name;
 	this.owner_chapters = owner_chapters;
-	this.owned_objects = owned_objects;
-	this.actions = actions;
-	this.contexts = contexts; // map of chapter_number to list of contexts
+	this.owned_objects = owned_objects || [];
+	this.actions = actions || [];
+	this.contexts = contexts || []; // map of chapter_number to list of contexts
 	this.current_participant = null;
 	this.active_chapter = first_chapter_appearance;
 }
 
 
-function Action (description, change_character_and_object) {
+/* function Action (description, change_character_and_object) {
 	this.description = description;
 	this.change_character_and_object = change_character_and_object;
-} 
+} */
+
+var Action = function(description) {  
+  this.description = description;
+};
+
+//possible prototype based action
+Action.prototype.repercussions = function() {  
+  console.log('These are the repercussions of each subAction');
+};
+
+var give_Harry_bottle = function () {  
+  Action.call(this, value);
+  this.description = "Give Harry a potion bottle";
+};
 
 function Object (name, owner, first_chapter_appearance) {
 	this.name = name;
-	this.owner = owner;
+	this.owner = owner || null;
 	this.active_chapter = first_chapter_appearance;
 }
 
@@ -67,6 +81,8 @@ let update_character_context = function(character, chapter_number, contexts) {
 let add_action_to_character = function(character, chapter_number, action) {
 	character.actions[chapter_number].add(action);
 };
+
+
 
 // create narrative here
 chapter_map = {"1" : "2"};
@@ -101,6 +117,13 @@ let a1_give_harry_bottle = function() {
     harry.owned_objects.add(bottle);
 };
 
+//an example of a protoype based action
+give_Harry_bottle.prototype.repercussions = function() {  
+  bottle.owner = "harry";
+  harry.owned_objects.add(bottle);
+};
+
+
 let a1_take_potion_to_bed = function() {
     update_chapter_map("1", "2");
 };
@@ -130,6 +153,7 @@ let a2B_take_potion_to_class = function() {
     bottle.owner = "harry";
     harry.owned_objects.add(bottle);
 };
+
 
 add_action_to_character(harry, "1", new Action("Take potion bottle with him to bed", a1_take_potion_to_bed));
 add_action_to_character(harry, "1", new Action("Leave potion bottle on table", a1_leave_potion_on_table));
