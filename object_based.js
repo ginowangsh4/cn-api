@@ -36,11 +36,11 @@ function Character (name, owner_chapters, owned_objects, actions, contexts, firs
 	this.active_chapter = first_chapter_appearance;
 }
 
-/*
+
 function Action (description, change_character_and_object) {
 	this.description = description;
 	this.change_character_and_object = change_character_and_object;
-} */
+} 
 
 function Object (name, owner, first_chapter_appearance) {
 	this.name = name;
@@ -142,6 +142,42 @@ add_action_to_character(hermione, "1", new Action("Give Harry a portion bottle",
 add_action_to_character(hermione, "2B", new Action("Rush Ron outside", a2B_rush_ron_outside));
 
 // end goal
-function createNewExperience() {
+function convertChapterToExperience(chapter) {
+	let exp = {
+    _id: Random.id(),
+    name: chapter.title,
+    resultsTemplate: "scavengerHunt",
+    contributionTypes: [    ],
+    description: chapter.title,
+    notificationText: "A new chapter has begun: " + chapter.title,
+    callbacks: [ //don't understand 
+    {
+      trigger: "cb.incidentFinished()",
+      function:
+      "function (sub) {                                                                     // 611\n  var uids = Submissions.find({                                                                                      // 612\n    iid: sub.iid                                                                                                     // 612\n  }).fetch().map(function (x) {                                                                                      // 612\n    return x.uid;                                                                                                    // 613\n  });                                                                                                                // 614\n  notify(uids, sub.iid, 'Wooh! All the scavenger hunt items were found. Click here to see all of them.', '', '/apicustomresults/' + sub.iid + '/' + sub.eid);\n}"
+    }
+    ]
+  };
+
+  for each (character in chapter.characters) {
+  		for each (action in character.actions) {
+  			var newNeed = {
+  				needName: action.description,
+  				situation {
+  					detector: character.contexts[chapter],
+  					number: 1
+  				},
+  				toPass {
+  					instruction: action.description
+  				},
+  				numberNeeded: 1
+  			}
+  			exp.contributionTypes += newNeed;
+  		}
+  }
+
+  Experiences.insert(exp);
+  let incident = createIncidentFromExperience(exp);
+  startRunningIncident(incident);
 
 }
