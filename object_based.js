@@ -30,16 +30,17 @@ function Character (name, owner_chapters, owned_objects, actions, contexts, firs
 	this.name = name;
 	this.owner_chapters = owner_chapters;
 	this.owned_objects = owned_objects || [];
-	this.actions = actions || [];
+	this.actions = actions || [];//needs to map actions to chapters
 	this.contexts = contexts || []; // map of chapter_number to list of contexts
 	this.current_participant = null;
 	this.active_chapter = first_chapter_appearance;
 }
 
 
-function Action (description, change_character_and_object) {
+function Action (description, change_character_and_object, priority) {
 	this.description = description;
 	this.change_character_and_object = change_character_and_object;
+	this.priority = priority;
 } 
 
 var Action = function(description) {  
@@ -155,15 +156,15 @@ let a2B_take_potion_to_class = function() {
 };
 
 
-add_action_to_character(harry, "1", new Action("Take potion bottle with him to bed", a1_take_potion_to_bed));
-add_action_to_character(harry, "1", new Action("Leave potion bottle on table", a1_leave_potion_on_table));
-add_action_to_character(harry, "2A", new Action("Leave the bedroom", a2_leave_bedroom));
-add_action_to_character(harry, "2B", new Action("Takes potion bottle with him to class", a2B_take_potion_to_class));
+add_action_to_character(harry, "1", new Action("Take potion bottle with him to bed", a1_take_potion_to_bed, 1));
+add_action_to_character(harry, "1", new Action("Leave potion bottle on table", a1_leave_potion_on_table, 1));
+add_action_to_character(harry, "2A", new Action("Leave the bedroom", a2_leave_bedroom, 0));
+add_action_to_character(harry, "2B", new Action("Takes potion bottle with him to class", a2B_take_potion_to_class, 2));
 
-add_action_to_character(ron, "2B", new Action("Drinks out of potion bottle", a2B_drink_potion_bottle));
+add_action_to_character(ron, "2B", new Action("Drinks out of potion bottle", a2B_drink_potion_bottle, 0));
 
-add_action_to_character(hermione, "1", new Action("Give Harry a portion bottle", a1_give_harry_bottle));
-add_action_to_character(hermione, "2B", new Action("Rush Ron outside", a2B_rush_ron_outside));
+add_action_to_character(hermione, "1", new Action("Give Harry a portion bottle", a1_give_harry_bottle, 0));
+add_action_to_character(hermione, "2B", new Action("Rush Ron outside", a2B_rush_ron_outside, 1));
 
 // end goal
 function convertChapterToExperience(chapter) {
