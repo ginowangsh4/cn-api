@@ -7,8 +7,8 @@
 //     this.chapter_map = chapter_map || {};
 // }
 
-let update_chapter_map = function(chapter_number, next_chapter_number) {
-	chapter_map.chapter_number = next_chapter_number;
+let update_chapter_map = function(chapter_title, next_chapter_title) {
+	chapter_map.chapter_title = next_chapter_title;
 };
 
 let chapter_map;
@@ -30,8 +30,8 @@ function Character (name, owner_chapters, owned_objects, actions, contexts, firs
 	this.name = name;
 	this.owner_chapters = owner_chapters;
 	this.owned_objects = owned_objects || [];
-	this.actions = actions || [];//needs to map actions to chapters
-	this.contexts = contexts || []; // map of chapter_number to list of contexts
+	this.actions = actions || [];//array of arrays based on chapter
+	this.contexts = contexts || []; // map of chapter_title to list of contexts
 	this.current_participant = null;
 	this.active_chapter = first_chapter_appearance;
 }
@@ -72,15 +72,15 @@ let find_participants_for_character = function(character, chapter) {
 	// query database
 };
 
-let update_character_context = function(character, chapter_number, contexts) {
+let update_character_context = function(character, chapter_title, contexts) {
 	// add chapter-specific context
-	character.context[chapter.number].add(chapter.setting.context);
+	character.context[chapter.number].push(chapter.setting.context);
 	// add character-specific context for this chapter
-	character.context[chapter.number].addAll(contexts);
+	character.context[chapter.number].pushAll(contexts);
 }
 
-let add_action_to_character = function(character, chapter_number, action) {
-	character.actions[chapter_number].add(action);
+let add_action_to_character = function(character, chapter_title, action) {
+	character.actions[chapter_title].push(action);
 };
 
 
@@ -115,13 +115,13 @@ update_character_context(ron, "2B", "sitting_by_table");
 // update action
 let a1_give_harry_bottle = function() {
     bottle.owner = "harry";
-    harry.owned_objects.add(bottle);
+    harry.owned_objects.push(bottle);
 };
 
 //an example of a protoype based action
 give_Harry_bottle.prototype.repercussions = function() {  
   bottle.owner = "harry";
-  harry.owned_objects.add(bottle);
+  harry.owned_objects.push(bottle);
 };
 
 
@@ -152,7 +152,7 @@ let a2B_rush_ron_outside = function() {
 
 let a2B_take_potion_to_class = function() {
     bottle.owner = "harry";
-    harry.owned_objects.add(bottle);
+    harry.owned_objects.push(bottle);
 };
 
 
@@ -168,52 +168,12 @@ add_action_to_character(hermione, "2B", new Action("Rush Ron outside", a2B_rush_
 
 // end goal
 function convertChapterToExperience(chapter) {
-  //need a way to keep number of already actions 
+  //need a way to keep number of already completed actions 
   let number_of_actions_done = 0;
-  let storytimeCallback = function(sub) {
-    Meteor.users.update(
-    {
-      _id: sub.uid
-    },
-    {
-      $set: {
-       "profile.staticAffordances.participatedInPotterNarrativeChapterOne": true
-      }
-    }
-    );
-
-    let affordance = sub.content.affordance;
-    number_of_actions_done += 1;
-
-    let options = [
-    ["Give Harry a potion bottle", "F8YqP3AEbyguQMJ9i", 0]
-    ["Take potion bottle with you to bed", "F8YqP3AEbyguQMJ9i", 1], //fix detector IDs
-    ["Leave potion bottle on the table", "F8YqP3AEbyguQMJ9i", 1]
-    ];
-
-    options = options.filter(function(x) {
-      return x[2] == number_of_actions_done;
-    });
-
-    let needName = "Harry's action" + Random.id(3);
-    if (cb.numberOfSubmissions() === 2) {
-      needName = "pageFinal";
-    }
-    let contribution = {
-      needName: needName,
-      situation: { detector: affordance, number: "1" },
-      toPass: {
-        instruction: sub.content.sentence,
-        dropdownChoices: { name: "affordance", options: options }
-      },
-      numberNeeded: 1
-    };
-    addContribution(sub.iid, contribution);
-  };
 
   let places = [];
 
-  for each (detector in chapter.setting.contexts) {
+  for each (detector in chapter.setting.contexts) { //detectors of the chapter's setting
     places.push(detector);
   }
   let detectorIds = [
@@ -227,17 +187,17 @@ function convertChapterToExperience(chapter) {
     let newVars = JSON.parse(
       JSON.stringify(CONSTANTS.DETECTORS[place]["variables"])
       );
-    newVars.push("var participatedInPotterNarrativeChapterOne;");
+    newVars.push("var participatedInPotterNarrative" + chapter.title + ";");
 
     let det = {
       _id: detectorIds[i],
       description:
-      CONSTANTS.DETECTORS[place].description + "_PotterNarrativeChapterOne",
+      CONSTANTS.DETECTORS[place].description + "_PotterNarrative" + chapter.title,
       variables: newVars,
       rules: [
       "(" +
       CONSTANTS.DETECTORS[place].rules[0] +
-      " ) && !participatedInPotterNarrativeChapterOne;"
+      " ) && !participatedInPotterNarrative" + chapter.title + ";"
       ]
     };
     Detectors.insert(det);
@@ -245,13 +205,43 @@ function convertChapterToExperience(chapter) {
     i++;
   });
 
-  let dropdownOptions = [
-   ["Give Harry a potion bottle", "F8YqP3AEbyguQMJ9i", 0]
-    ["Take potion bottle with you to bed", "F8YqP3AEbyguQMJ9i", 1], //fix detector IDs
-    ["Leave potion bottle on the table", "F8YqP3AEbyguQMJ9i", 1]
-  ];
+  let chapterActions = []; //total list of actions that will be completed in the chapter
 
-  dropdownOptions = dropdownOptions.filter(function(x) {
+  for each (character in chapter.characters) {
+    for each (action in character.actions) {
+      //action[0] is the action itself, action[1] is the chapter it refers to 
+       if (action[1] == chapter) //check if the action is in the chapter
+          chapterActions.push([action[0].description, "F8YqP3AEbyguQMJ9i", action[0].priority])
+        /* var newNeed = {
+          needName: action.description,
+          situation {
+            detector: character.contexts[chapter],
+            number: 1
+          },
+          toPass {
+            instruction: action.description
+          },
+          numberNeeded: 1
+        }
+        exp.contributionTypes += newNeed;
+        */
+      }
+  }
+
+  //find the min priority
+  let first_action = chapterActions[0];
+  let max_actions_allowed = 0;
+  for each (action in chapterActions) {
+    if action[2] < first_action.priority {
+      first_action = action;
+    }
+    if action[2] > max_actions_allowed {
+      max_actions_allowed = action[2];
+    }
+  }
+
+
+  chapterActions = chapterActions.filter(function(x) {
       return x[2] == number_of_actions_done;
     });
 
@@ -273,28 +263,28 @@ function convertChapterToExperience(chapter) {
     name: chapter.title,
     resultsTemplate: "scavengerHunt",
     contributionTypes: [  
-      needName: a1_give_harry_bottle,
-      situation: { detector: "a1_give_harry_bottle.detector", number: "1"},
+      needName: first_action.description, //should be the title of the action
+      situation: { detector: "F8YqP3AEbyguQMJ9i", number: "1"},
       toPass: {
-        instruction: hermione.actions[0].description,
-        firstSentence: "Harry is making a potion for his homework assignment when he realizes that he's all out of potion bottles.",
+        instruction: first_action.description,
+        firstSentence: chapter.title,
         dropdownChoices: {
           name: "affordance",
-          options: dropdownOptions
+          options: chapterActions
         }
       },
       numberNeeded: 1
     ],
     description: chapter.title,
     notificationText: "A new chapter has begun: " + chapter.title,
-    callbacks: [ //don't understand 
+    callbacks: [ 
     {
-      trigger: "cb.newSubmission() && (cb.numberOfSubmissions() < 2)",
+      trigger: "cb.newSubmission() && (cb.numberOfSubmissions() < " + max_actions_allowed + ")",
       function: storytimeCallback.toString()
     },
     {
       trigger: "cb.incidentFinished()",
-      function: sendNotification.toString()
+      function: sendNotification.toString() //start the next chapter
     }
     ]
   };
@@ -317,8 +307,45 @@ function convertChapterToExperience(chapter) {
       }
   } */
 
+  let storytimeCallback = function(sub) {
+    Meteor.users.update(
+    {
+      _id: sub.uid
+    },
+    {
+      $set: {
+       "profile.staticAffordances.participatedInPotterNarrative" + chapter.title: true
+      }
+    }
+    );
+
+    number_of_actions_done += 1; //an action  has now been performed
+
+    let affordance = sub.content.affordance;//not sure if this is still needed
+
+    let options = chapterActions; //takes the list of actions within the chapter 
+
+    options = options.filter(function(x) { //filters out all the actions that cannot be done at the moment
+      return x[2] == number_of_actions_done;
+    });
+
+    let needName = "Action" + Random.id(3); //which action in the chapter is being completed 
+    if (cb.numberOfSubmissions() === 2) {
+      needName = "pageFinal";
+    }
+    let contribution = {
+      needName: needName,
+      situation: { detector: affordance, number: "1" },
+      toPass: {
+        instruction: sub.content.sentence, //what is this?
+        dropdownChoices: { name: "affordance", options: options }
+      },
+      numberNeeded: 1
+    };
+    addContribution(sub.iid, contribution);
+  };
+
   Experiences.insert(exp);
   let incident = createIncidentFromExperience(exp);
   startRunningIncident(incident);
 }
-
